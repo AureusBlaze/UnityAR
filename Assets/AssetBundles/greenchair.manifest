@@ -1,0 +1,39 @@
+ManifestFileVersion: 0
+UnityVersion: 6000.4.0f1
+CRC: 3148568854
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: f2cddf7d005499509e854615ac400730
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 95fcc49bea9561007c79bdf2ad78e2e1
+  IncrementalBuildHash:
+    serializedVersion: 2
+    Hash: 5e839416b6f3d97d611a3d739a321d37
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 23
+  Script: {instanceID: 0}
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 33
+  Script: {instanceID: 0}
+- Class: 43
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/AssetBundles/ASSET 1 Files/Textures/DS_Armchair_01_Green_AlbedoTransparency.png
+- Assets/AssetBundles/ASSET 1 Files/Textures/DS_Armchair_01_Green_MetallicSmoothness.png
+- Assets/AssetBundles/ASSET 1 Files/Textures/GreenChairMaterial.mat
+- Assets/AssetBundles/ASSET 1 Files/Textures/DS_Armchair_01_Green_Normal.png
+- Assets/AssetBundles/ASSET 1 Files/GreenChair1.prefab
+Dependencies: []

@@ -2,8 +2,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
-using GLTFast;
 using UnityEngine.XR.ARSubsystems;
+using UnityEngine.Networking;
 using System.Linq;
 
 namespace ARProject.Scripts
@@ -60,7 +60,7 @@ namespace ARProject.Scripts
             }
             else
             {
-                Debug.LogWarning("[ARGLBLoader] No GLB URL found in GLBManager. Please send it from Flutter.");
+                Debug.LogWarning("[ARGLBLoader] No AssetBundle URL found in GLBManager. Please send it from Flutter.");
             }
         }
 
@@ -69,23 +69,72 @@ namespace ARProject.Scripts
             if (isDownloading) return;
             isDownloading = true;
 
-            Debug.Log($"[ARGLBLoader] Starting download of: {url}");
+            Debug.Log($"[ARGLBLoader] Starting download of AssetBundle: {url}");
 
-            var gltf = new GltfImport();
-            bool success = await gltf.Load(url);
+            using (UnityWebRequest uwr = UnityWebRequestAssetBundle.GetAssetBundle(url))
+            {
+                var operation = uwr.SendWebRequest();
 
-            if (success)
-            {
-                loadedModel = new GameObject("LoadedGLB");
-                loadedModel.SetActive(false); // Keep it inactive until placed
-                await gltf.InstantiateMainSceneAsync(loadedModel.transform);
-                // Fix materials/shaders (resolve pink materials when URP is used)
-                FixMaterials(loadedModel);
-                Debug.Log("[ARGLBLoader] GLB loaded and instantiated.");
-            }
-            else
-            {
-                Debug.LogError("[ARGLBLoader] Failed to load GLB from: " + url);
+                while (!operation.isDone)
+                {
+                    await Task.Yield();
+                }
+
+                if (uwr.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogError($"[ARGLBLoader] Failed to download AssetBundle: {uwr.error}");
+                }
+                else
+                {
+                    AssetBundle bundle = DownloadHandlerAssetBundle.GetContent(uwr);
+                    if (bundle != null)
+                    {
+                        var prefabRequest = bundle.LoadAllAssetsAsync<GameObject>();
+                        while (!prefabRequest.isDone)
+                        {
+                            await Task.Yield();
+                        }
+
+                        if (prefabRequest.allAssets.Length > 0)
+                        {
+                            GameObject prefabToInstantiate = null;
+                            foreach (var asset in prefabRequest.allAssets)
+                            {
+                                Debug.Log($"[ARGLBLoader] Found asset in bundle: {asset.name} (Type: {asset.GetType()})");
+                                if (asset is GameObject go)
+                                {
+                                    // Try to pick the prefab rather than the raw FBX if possible
+                                    if (prefabToInstantiate == null || go.name.Contains("(Clone)") == false)
+                                    {
+                                        prefabToInstantiate = go;
+                                    }
+                                }
+                            }
+
+                            if (prefabToInstantiate != null)
+                            {
+                                loadedModel = Instantiate(prefabToInstantiate);
+                                loadedModel.SetActive(false); // Keep inactive until placing
+                                Debug.Log($"[ARGLBLoader] AssetBundle loaded and instantiated: {prefabToInstantiate.name}");
+                            }
+                            else
+                            {
+                                Debug.LogError("[ARGLBLoader] No GameObject found inside the downloaded AssetBundle.");
+                            }
+                        }
+                        else
+                        {
+                            Debug.LogError("[ARGLBLoader] Downloaded AssetBundle is empty.");
+                        }
+
+                        // Unload the compressed bundle data from memory
+                        bundle.Unload(false);
+                    }
+                    else
+                    {
+                        Debug.LogError("[ARGLBLoader] AssetBundle is null.");
+                    }
+                }
             }
 
             isDownloading = false;
@@ -94,6 +143,9 @@ namespace ARProject.Scripts
         private void Update()
         {
             if (loadedModel == null) return;
+            
+            // Prevent ARCore log spam/crashing if the session isn't fully initialized and tracking yet
+            if (ARSession.state != ARSessionState.SessionTracking) return;
 
             // Preview placement at center of screen until user taps
             Vector2 screenCenter = Camera.main.ViewportToScreenPoint(new Vector2(cursorRaycastX, cursorRaycastY));
@@ -108,6 +160,7 @@ namespace ARProject.Scripts
                     loadedModel.SetActive(true);
                     isPreviewActive = true;
                     loadedModel.transform.position = hitPose.position;
+                    
                     // If vertical (wall), align model to face outwards
                     if (planeManager != null)
                     {
@@ -127,6 +180,24 @@ namespace ARProject.Scripts
                     {
                         loadedModel.transform.rotation = hitPose.rotation;
                     }
+                }
+                else
+                {
+                    // Fallback floating preview if no AR plane is detected yet
+                    loadedModel.SetActive(true);
+                    isPreviewActive = true;
+                    
+                    // Place it 1.5 meters in front of the user
+                    Vector3 fallbackPos = Camera.main.transform.position + Camera.main.transform.forward * 1.5f;
+                    
+                    // Smoothly follow the camera so it doesn't jump wildly
+                    loadedModel.transform.position = Vector3.Lerp(loadedModel.transform.position, fallbackPos, Time.deltaTime * 5f);
+                    
+                    // Make the front of the model face the user
+                    Vector3 lookPos = Camera.main.transform.position;
+                    // Keep rotation purely horizontal (Y axis)
+                    lookPos.y = loadedModel.transform.position.y; 
+                    loadedModel.transform.LookAt(lookPos);
                 }
 
                 // On user touch, finalize placement (tap to place)

@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.unity.addressables": "2.9.1",
     "com.unity.cloud.gltfast": "6.18.0",
     "com.unity.feature.development": "1.0.2",
     "com.unity.inputsystem": "1.19.0",

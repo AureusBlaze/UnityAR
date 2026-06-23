@@ -47,9 +47,8 @@ namespace ARProject.Scripts
 
         public void TestGLBLoadingAndSceneTransition()
         {
-            // This method can be called from the Unity Editor for testing purposes.
-            // It simulates receiving a GLB URL and transitioning to the AR scene.
-            string testUrl = "http://192.168.0.107:8000/storage/01KNTXC14JNYJ108J346JKQ03F.glb";
+            // You can use file:/// to test AssetBundles directly from your hard drive without uploading!
+            string testUrl = "file:///d:/University_Final_Project/Smart_AR_Furniture_App/UnityAR/UnityAR/Assets/AssetBundles/chair";
             ReceiveGlbUrl(testUrl);
         }
     }

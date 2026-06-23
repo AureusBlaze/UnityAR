@@ -1,0 +1,15 @@
+ManifestFileVersion: 0
+UnityVersion: 6000.4.0f1
+CRC: 4094046586
+HashAppended: 0
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: unifiedraytracing
+      Dependencies: {}
+    Info_1:
+      Name: ardebugmenu
+      Dependencies: {}
+    Info_2:
+      Name: greenchair
+      Dependencies: {}
